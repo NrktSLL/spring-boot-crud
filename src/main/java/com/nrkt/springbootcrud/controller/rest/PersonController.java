@@ -1,4 +1,4 @@
-package com.nrkt.springbootcrud.controller;
+package com.nrkt.springbootcrud.controller.rest;
 
 import com.nrkt.springbootcrud.dto.PersonDto;
 import com.nrkt.springbootcrud.model.Person;
