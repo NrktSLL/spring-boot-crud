@@ -1,20 +1,17 @@
 package com.nrkt.springbootcrud.controller.rest;
 
 import com.nrkt.springbootcrud.dto.PersonDto;
-import com.nrkt.springbootcrud.model.Person;
 import com.nrkt.springbootcrud.service.PersonService;
 import io.swagger.annotations.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.modelmapper.ModelMapper;
 import org.springframework.hateoas.Link;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -27,7 +24,6 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 public class PersonController {
 
     PersonService personService;
-    ModelMapper customModelMapper;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -40,10 +36,7 @@ public class PersonController {
     })
     public PersonDto createPerson(
             @ApiParam(value = "Person Specifications", required = true)
-            @RequestBody @Valid PersonDto personDto) {
-
-        var person = new Person();
-        customModelMapper.map(personDto, person);
+            @RequestBody @Valid PersonDto person) {
 
         person = personService.addPerson(person);
 
@@ -57,15 +50,23 @@ public class PersonController {
                         .withType("GET")
                         .withTitle("Persons")
                         .withDeprecation("Get All Person"),
-                linkTo(methodOn(PersonController.class).editPerson(person.getId(), personDto))
+                linkTo(methodOn(PersonController.class).editPerson(person.getId(), person))
                         .withSelfRel()
                         .withDeprecation("Edit Person")
-                        .withType("POST")
+                        .withType("POST"),
+                linkTo(methodOn(PersonController.class).getPersonByMail(person.getMail()))
+                        .withRel("person")
+                        .withType("GET")
+                        .withTitle("Persons")
+                        .withDeprecation("Get Person by email"),
+                linkTo(methodOn(PersonController.class).getPersonByName(person.getName()))
+                        .withRel("person")
+                        .withType("GET")
+                        .withTitle("Persons")
+                        .withDeprecation("Get Person by email"),
         };
 
-        personDto = customModelMapper.map(person, PersonDto.class);
-
-        return personDto.add(links);
+        return person.add(links);
     }
 
     @PutMapping("/{id}")
@@ -79,10 +80,7 @@ public class PersonController {
     public PersonDto editPerson(
             @ApiParam(value = "Existing person ID", required = true)
             @PathVariable long id, @ApiParam(value = "Person Specifications", required = true)
-            @RequestBody @Valid PersonDto personDto) {
-
-        var person = new Person();
-        customModelMapper.map(personDto, person);
+            @RequestBody @Valid PersonDto person) {
 
         person = personService.updatePerson(id, person);
 
@@ -95,12 +93,20 @@ public class PersonController {
                         .withRel("person")
                         .withType("GET")
                         .withTitle("Persons")
-                        .withDeprecation("Get All Person")
+                        .withDeprecation("Get All Person"),
+                linkTo(methodOn(PersonController.class).getPersonByMail(person.getMail()))
+                        .withRel("person")
+                        .withType("GET")
+                        .withTitle("Persons")
+                        .withDeprecation("Get Person by email"),
+                linkTo(methodOn(PersonController.class).getPersonByName(person.getName()))
+                        .withRel("person")
+                        .withType("GET")
+                        .withTitle("Persons")
+                        .withDeprecation("Get Person by email")
         };
 
-        personDto = customModelMapper.map(person, PersonDto.class);
-
-        return personDto.add(links);
+        return person.add(links);
     }
 
     @DeleteMapping("/{id}")
@@ -124,7 +130,8 @@ public class PersonController {
     public PersonDto getPerson(
             @ApiParam(value = "Existing person ID", required = true)
             @PathVariable long id) {
-        Person person = personService.getPerson(id);
+
+        PersonDto person = personService.getPerson(id);
 
         var links = new Link[]{
                 linkTo(methodOn(PersonController.class).createPerson(new PersonDto()))
@@ -135,13 +142,20 @@ public class PersonController {
                         .withRel("person")
                         .withType("GET")
                         .withTitle("Persons")
-                        .withDeprecation("Get All Person")
+                        .withDeprecation("Get All Person"),
+                linkTo(methodOn(PersonController.class).getPersonByMail(person.getMail()))
+                        .withRel("person")
+                        .withType("GET")
+                        .withTitle("Persons")
+                        .withDeprecation("Get Person by email"),
+                linkTo(methodOn(PersonController.class).getPersonByName(person.getName()))
+                        .withRel("person")
+                        .withType("GET")
+                        .withTitle("Persons")
+                        .withDeprecation("Get Person by email")
         };
 
-        var personDto = new PersonDto();
-        personDto = customModelMapper.map(person, PersonDto.class);
-
-        return personDto.add(links);
+        return person.add(links);
     }
 
     @GetMapping
@@ -149,12 +163,8 @@ public class PersonController {
     @ApiOperation(value = "Get All Person")
     @ApiResponse(code = 500, message = "Internal Server Error")
     public List<PersonDto> getPersonList() {
-        var personList = personService.getAllPerson();
 
-        List<PersonDto> personDtoList = personList
-                .stream()
-                .map(person -> customModelMapper.map(person, PersonDto.class))
-                .collect(Collectors.toList());
+        var personList = personService.getAllPerson();
 
         Link link = linkTo(
                 methodOn(PersonController.class).createPerson(new PersonDto()))
@@ -162,12 +172,12 @@ public class PersonController {
                 .withType("POST")
                 .withDeprecation("Add Person");
 
-        personDtoList.forEach(person -> person.add(link));
+        personList.forEach(person -> person.add(link));
 
-        return personDtoList;
+        return personList;
     }
 
-    @GetMapping("/bymail")
+    @GetMapping("/findbyemail")
     @ResponseStatus(HttpStatus.OK)
     @ApiOperation(value = "Bring Person Information by Mail")
     @ApiResponses(value = {
@@ -175,7 +185,8 @@ public class PersonController {
             @ApiResponse(code = 500, message = "Internal Server Error")
     })
     public PersonDto getPersonByMail(@RequestHeader(value = "email") String mail) {
-        Person person = personService.bringPersonByMail(mail);
+
+        PersonDto person = personService.bringPersonByMail(mail);
 
         var links = new Link[]{
                 linkTo(methodOn(PersonController.class).createPerson(new PersonDto()))
@@ -186,23 +197,25 @@ public class PersonController {
                         .withRel("person")
                         .withType("GET")
                         .withTitle("Persons")
-                        .withDeprecation("Get All Person")
+                        .withDeprecation("Get All Person"),
+                linkTo(methodOn(PersonController.class).getPersonByName(person.getName()))
+                        .withRel("person")
+                        .withType("GET")
+                        .withTitle("Persons")
+                        .withDeprecation("Get Person by email")
         };
 
-        var personDto = new PersonDto();
-        personDto = customModelMapper.map(person, PersonDto.class);
-
-        return personDto.add(links);
+        return person.add(links);
     }
 
-    @GetMapping("/byname")
+    @GetMapping("/findbyname")
     @ResponseStatus(HttpStatus.OK)
     @ApiOperation(value = "Bring Person Information List by Name")
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "Internal Server Error")
     })
     public List<PersonDto> getPersonByName(@RequestHeader(value = "name") String name) {
-        List<Person> personList = personService.bringPersonByName(name);
+        List<PersonDto> personList = personService.bringPersonByName(name);
 
         var links = new Link[]{
                 linkTo(methodOn(PersonController.class).createPerson(new PersonDto()))
@@ -213,16 +226,16 @@ public class PersonController {
                         .withRel("person")
                         .withType("GET")
                         .withTitle("Persons")
-                        .withDeprecation("Get All Person")
+                        .withDeprecation("Get All Person"),
+                linkTo(methodOn(PersonController.class).getPersonByMail(new PersonDto().getMail()))
+                        .withRel("person")
+                        .withType("GET")
+                        .withTitle("Persons")
+                        .withDeprecation("Get Person by email"),
         };
 
-        List<PersonDto> personDtoList = personList
-                .stream()
-                .map(person -> customModelMapper.map(person, PersonDto.class))
-                .collect(Collectors.toList());
+        personList.forEach(person -> person.add(links));
 
-        personDtoList.forEach(person -> person.add(links));
-
-        return personDtoList;
+        return personList;
     }
 }

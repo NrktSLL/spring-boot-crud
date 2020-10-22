@@ -1,23 +1,24 @@
 package com.nrkt.springbootcrud.service;
 
+import com.nrkt.springbootcrud.dto.PersonDto;
 import com.nrkt.springbootcrud.model.Person;
 
 import java.util.List;
 
 public interface PersonService {
-    Person addPerson(Person person);
+    PersonDto addPerson(PersonDto person);
 
-    List<Person> addAllPerson(List<Person> person);
+    List<PersonDto> addAllPerson(List<PersonDto> person);
 
-    Person updatePerson(long id, Person person);
+    PersonDto updatePerson(long id, PersonDto person);
 
     void removePerson(long id);
 
-    Person getPerson(Long id);
+    PersonDto getPerson(Long id);
 
-    List<Person> getAllPerson();
+    List<PersonDto> getAllPerson();
 
-    List<Person> bringPersonByName(String name);
+    List<PersonDto> bringPersonByName(String name);
 
-    Person bringPersonByMail(String name);
+    PersonDto bringPersonByMail(String name);
 }
