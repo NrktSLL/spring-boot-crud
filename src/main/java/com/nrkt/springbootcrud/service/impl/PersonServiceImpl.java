@@ -1,6 +1,7 @@
 package com.nrkt.springbootcrud.service.impl;
 
-import com.nrkt.springbootcrud.dto.PersonDto;
+import com.nrkt.springbootcrud.dto.request.PersonDtoRequest;
+import com.nrkt.springbootcrud.dto.response.PersonDtoResponse;
 import com.nrkt.springbootcrud.exception.PersonNotFoundException;
 import com.nrkt.springbootcrud.model.Person;
 import com.nrkt.springbootcrud.repository.PersonRepository;
@@ -9,7 +10,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -25,41 +25,40 @@ public class PersonServiceImpl implements PersonService {
     ModelMapper customModelMapper;
 
     @Override
-    public PersonDto addPerson(PersonDto newPerson) {
+    public PersonDtoResponse addPerson(PersonDtoRequest newPerson) {
         Person person = customModelMapper.map(newPerson, Person.class);
         personRepository.save(person);
 
-        return customModelMapper.map(person, PersonDto.class);
+        return customModelMapper.map(person, PersonDtoResponse.class);
     }
 
     @Override
-    public List<PersonDto> addAllPerson(List<PersonDto> personDtoList) {
-
-        List<Person> personList = personDtoList
+    public List<PersonDtoResponse> addAllPerson(List<PersonDtoRequest> personDtoResponseList) {
+        List<Person> personList = personDtoResponseList
                 .stream()
                 .map(dto -> customModelMapper.map(dto, Person.class))
                 .collect(Collectors.toList());
 
         personList = personRepository.saveAll(personList);
 
-        return Arrays.asList(customModelMapper.map(personList, PersonDto[].class));
+        return Arrays.asList(customModelMapper.map(personList, PersonDtoResponse[].class));
     }
 
     @Override
-    public PersonDto updatePerson(long id, PersonDto personDto) {
+    public PersonDtoResponse updatePerson(long id, PersonDtoRequest personDtoResponse) {
         var existPerson = personRepository
                 .findById(id)
                 .orElseThrow(PersonNotFoundException::new);
 
-        existPerson.setName(personDto.getName());
-        existPerson.setLastName(personDto.getSurname());
-        existPerson.setMail(personDto.getMail());
-        existPerson.setBorn(personDto.getBorn());
-        existPerson.setPhone(personDto.getPhone());
+        existPerson.setName(personDtoResponse.getName());
+        existPerson.setLastName(personDtoResponse.getSurname());
+        existPerson.setMail(personDtoResponse.getMail());
+        existPerson.setBorn(personDtoResponse.getBorn());
+        existPerson.setPhone(personDtoResponse.getPhone());
 
         Person person = personRepository.save(existPerson);
 
-        return customModelMapper.map(person, PersonDto.class);
+        return customModelMapper.map(person, PersonDtoResponse.class);
     }
 
     @Override
@@ -68,33 +67,32 @@ public class PersonServiceImpl implements PersonService {
     }
 
     @Override
-    public PersonDto getPerson(Long id) {
+    public PersonDtoResponse getPerson(Long id) {
         Person person = personRepository.findById(id).orElseThrow(PersonNotFoundException::new);
-        return customModelMapper.map(person, PersonDto.class);
+        return customModelMapper.map(person, PersonDtoResponse.class);
     }
 
     @Override
-    public List<PersonDto> getAllPerson() {
-        return personRepository
-                .findAll(Sort.by(Sort.Direction.DESC, "id"))
+    public List<PersonDtoResponse> getAllPerson() {
+        return personRepository.findAll()
                 .stream()
-                .map(person -> customModelMapper.map(person, PersonDto.class))
+                .map(person -> customModelMapper.map(person, PersonDtoResponse.class))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<PersonDto> bringPersonByName(String name) {
+    public List<PersonDtoResponse> bringPersonByName(String name) {
         return personRepository.findByName(name)
                 .stream()
-                .map(person -> customModelMapper.map(person, PersonDto.class))
+                .map(person -> customModelMapper.map(person, PersonDtoResponse.class))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public PersonDto bringPersonByMail(String mail) {
+    public PersonDtoResponse bringPersonByMail(String mail) {
         return personRepository.findByMail(mail)
                 .stream()
-                .map(person -> customModelMapper.map(person, PersonDto.class))
+                .map(person -> customModelMapper.map(person, PersonDtoResponse.class))
                 .findFirst().orElseThrow(PersonNotFoundException::new);
     }
 }

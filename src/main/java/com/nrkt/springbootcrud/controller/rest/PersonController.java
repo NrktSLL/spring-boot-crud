@@ -1,6 +1,7 @@
 package com.nrkt.springbootcrud.controller.rest;
 
-import com.nrkt.springbootcrud.dto.PersonDto;
+import com.nrkt.springbootcrud.dto.request.PersonDtoRequest;
+import com.nrkt.springbootcrud.dto.response.PersonDtoResponse;
 import com.nrkt.springbootcrud.service.PersonService;
 import io.swagger.annotations.*;
 import lombok.AccessLevel;
@@ -34,11 +35,11 @@ public class PersonController {
             @ApiResponse(code = 400, message = "Validate Error !"),
             @ApiResponse(code = 500, message = "Internal Server Error !")
     })
-    public PersonDto createPerson(
-            @ApiParam(value = "Person Specifications", required = true)
-            @RequestBody @Valid PersonDto person) {
+    public PersonDtoResponse createPerson(
+            @ApiParam(name = "person", value = "Person Specifications", required = true)
+            @RequestBody @Valid PersonDtoRequest personDtoRequest) {
 
-        person = personService.addPerson(person);
+        var person = personService.addPerson(personDtoRequest);
 
         var links = new Link[]{
                 linkTo(methodOn(PersonController.class).getPerson(person.getId()))
@@ -50,19 +51,17 @@ public class PersonController {
                         .withType("GET")
                         .withTitle("Persons")
                         .withDeprecation("Get All Person"),
-                linkTo(methodOn(PersonController.class).editPerson(person.getId(), person))
-                        .withSelfRel()
-                        .withDeprecation("Edit Person")
-                        .withType("POST"),
-                linkTo(methodOn(PersonController.class).getPersonByMail(person.getMail()))
+                linkTo(methodOn(PersonController.class).editPerson(person.getId(), personDtoRequest))
                         .withRel("person")
+                        .withDeprecation("Edit Person")
+                        .withType("PUT"),
+                linkTo(methodOn(PersonController.class).getPersonByMail(person.getMail()))
+                        .withSelfRel()
                         .withType("GET")
-                        .withTitle("Persons")
                         .withDeprecation("Get Person by email"),
                 linkTo(methodOn(PersonController.class).getPersonByName(person.getName()))
-                        .withRel("person")
+                        .withSelfRel()
                         .withType("GET")
-                        .withTitle("Persons")
                         .withDeprecation("Get Person by email"),
         };
 
@@ -77,12 +76,11 @@ public class PersonController {
             @ApiResponse(code = 400, message = "Validate Error"),
             @ApiResponse(code = 500, message = "Internal Server Error")
     })
-    public PersonDto editPerson(
-            @ApiParam(value = "Existing person ID", required = true)
+    public PersonDtoResponse editPerson(
             @PathVariable long id, @ApiParam(value = "Person Specifications", required = true)
-            @RequestBody @Valid PersonDto person) {
+            @RequestBody @Valid PersonDtoRequest personDtoRequest) {
 
-        person = personService.updatePerson(id, person);
+        var person = personService.updatePerson(id, personDtoRequest);
 
         var links = new Link[]{
                 linkTo(methodOn(PersonController.class).getPerson(person.getId()))
@@ -95,15 +93,13 @@ public class PersonController {
                         .withTitle("Persons")
                         .withDeprecation("Get All Person"),
                 linkTo(methodOn(PersonController.class).getPersonByMail(person.getMail()))
-                        .withRel("person")
+                        .withSelfRel()
                         .withType("GET")
-                        .withTitle("Persons")
                         .withDeprecation("Get Person by email"),
                 linkTo(methodOn(PersonController.class).getPersonByName(person.getName()))
-                        .withRel("person")
+                        .withSelfRel()
                         .withType("GET")
-                        .withTitle("Persons")
-                        .withDeprecation("Get Person by email")
+                        .withDeprecation("Get Person by email"),
         };
 
         return person.add(links);
@@ -127,14 +123,14 @@ public class PersonController {
             @ApiResponse(code = 404, message = "Person not found!"),
             @ApiResponse(code = 500, message = "Internal Server Error")
     })
-    public PersonDto getPerson(
+    public PersonDtoResponse getPerson(
             @ApiParam(value = "Existing person ID", required = true)
             @PathVariable long id) {
 
-        PersonDto person = personService.getPerson(id);
+        PersonDtoResponse person = personService.getPerson(id);
 
         var links = new Link[]{
-                linkTo(methodOn(PersonController.class).createPerson(new PersonDto()))
+                linkTo(methodOn(PersonController.class).createPerson(null))
                         .withSelfRel()
                         .withType("POST")
                         .withDeprecation("Add Person"),
@@ -144,15 +140,13 @@ public class PersonController {
                         .withTitle("Persons")
                         .withDeprecation("Get All Person"),
                 linkTo(methodOn(PersonController.class).getPersonByMail(person.getMail()))
-                        .withRel("person")
+                        .withSelfRel()
                         .withType("GET")
-                        .withTitle("Persons")
                         .withDeprecation("Get Person by email"),
                 linkTo(methodOn(PersonController.class).getPersonByName(person.getName()))
-                        .withRel("person")
+                        .withSelfRel()
                         .withType("GET")
-                        .withTitle("Persons")
-                        .withDeprecation("Get Person by email")
+                        .withDeprecation("Get Person by email"),
         };
 
         return person.add(links);
@@ -160,19 +154,19 @@ public class PersonController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    @ApiOperation(value = "Get All Person")
+    @ApiOperation(value = "Get All Person", produces = "application/json")
     @ApiResponse(code = 500, message = "Internal Server Error")
-    public List<PersonDto> getPersonList() {
+    public List<PersonDtoResponse> getPersonList() {
 
         var personList = personService.getAllPerson();
 
-        Link link = linkTo(
-                methodOn(PersonController.class).createPerson(new PersonDto()))
-                .withSelfRel()
-                .withType("POST")
-                .withDeprecation("Add Person");
-
-        personList.forEach(person -> person.add(link));
+        var links = new Link[]{
+                linkTo(methodOn(PersonController.class).createPerson(null))
+                        .withSelfRel()
+                        .withType("POST")
+                        .withDeprecation("Add Person"),
+        };
+        personList.forEach(person -> person.add(links));
 
         return personList;
     }
@@ -184,12 +178,12 @@ public class PersonController {
             @ApiResponse(code = 404, message = "Person not found!"),
             @ApiResponse(code = 500, message = "Internal Server Error")
     })
-    public PersonDto getPersonByMail(@RequestHeader(value = "email") String mail) {
+    public PersonDtoResponse getPersonByMail(@RequestHeader(value = "email") String mail) {
 
-        PersonDto person = personService.bringPersonByMail(mail);
+        PersonDtoResponse person = personService.bringPersonByMail(mail);
 
         var links = new Link[]{
-                linkTo(methodOn(PersonController.class).createPerson(new PersonDto()))
+                linkTo(methodOn(PersonController.class).createPerson(null))
                         .withSelfRel()
                         .withType("POST")
                         .withDeprecation("Add Person"),
@@ -199,9 +193,8 @@ public class PersonController {
                         .withTitle("Persons")
                         .withDeprecation("Get All Person"),
                 linkTo(methodOn(PersonController.class).getPersonByName(person.getName()))
-                        .withRel("person")
+                        .withSelfRel()
                         .withType("GET")
-                        .withTitle("Persons")
                         .withDeprecation("Get Person by email")
         };
 
@@ -214,11 +207,11 @@ public class PersonController {
     @ApiResponses(value = {
             @ApiResponse(code = 500, message = "Internal Server Error")
     })
-    public List<PersonDto> getPersonByName(@RequestHeader(value = "name") String name) {
-        List<PersonDto> personList = personService.bringPersonByName(name);
+    public List<PersonDtoResponse> getPersonByName(@RequestHeader(value = "name") String name) {
+        List<PersonDtoResponse> personList = personService.bringPersonByName(name);
 
         var links = new Link[]{
-                linkTo(methodOn(PersonController.class).createPerson(new PersonDto()))
+                linkTo(methodOn(PersonController.class).createPerson(null))
                         .withSelfRel()
                         .withType("POST")
                         .withDeprecation("Add Person"),
@@ -227,10 +220,9 @@ public class PersonController {
                         .withType("GET")
                         .withTitle("Persons")
                         .withDeprecation("Get All Person"),
-                linkTo(methodOn(PersonController.class).getPersonByMail(new PersonDto().getMail()))
-                        .withRel("person")
+                linkTo(methodOn(PersonController.class).getPersonByMail(new PersonDtoResponse().getMail()))
+                        .withSelfRel()
                         .withType("GET")
-                        .withTitle("Persons")
                         .withDeprecation("Get Person by email"),
         };
 

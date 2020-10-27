@@ -1,32 +1,22 @@
-package com.nrkt.springbootcrud.dto;
+package com.nrkt.springbootcrud.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.springframework.hateoas.Link;
-import org.springframework.hateoas.RepresentationModel;
+
 
 import javax.validation.constraints.*;
 import java.util.Date;
-import java.util.List;
 
 @Data
-@NoArgsConstructor(force = true)
-@EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-@ApiModel(value = "Person", description = "Person's entity")
-public class PersonDto extends RepresentationModel<PersonDto> {
-
-    @ApiModelProperty(hidden = true)
-    @Getter(AccessLevel.NONE)
-    final List<Link> links;
-
-    @ApiModelProperty(hidden = true)
-    Long id;
+@ApiModel(value = "Person Request", description = "Person's entity")
+public class PersonDtoRequest {
 
     @NotBlank
     @ApiModelProperty(notes = "Person Name", example = "Nrkt", required = true, position = 1)
