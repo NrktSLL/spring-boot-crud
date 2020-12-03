@@ -1,4 +1,4 @@
-package com.nrkt.springbootcrud.boostrap;
+package com.nrkt.springbootcrud.bootstrapper;
 
 import com.nrkt.springbootcrud.model.Person;
 import com.nrkt.springbootcrud.repository.PersonRepository;
