@@ -13,6 +13,7 @@
 * Dev Tools
 * Swagger
 * Jackson Dataformat yaml and Dataformat xml
+* Content Negotiation Support(Xml,Json,Yaml Support)
 
 
 ## Swagger
